@@ -6,14 +6,13 @@ st.set_page_config(page_title="Index Oficial - Generator Acte", page_icon="📝"
 st.title("📝 Generator de Cereri și Contestații")
 st.markdown("Completează câmpurile de mai jos pentru a genera un document oficial.")
 
-# Sidebar pentru API Key
 with st.sidebar:
+    st.write("### Configurare")
     api_key = st.text_input("Introdu Cheia API Gemini", type="password")
 
-# Formular de date
 nume = st.text_input("Numele tău complet")
-institutie = st.text_input("Către ce instituție (ex: Primăria Sector 3, ANAF, etc.)")
-problema = st.text_area("Descrie pe scurt problema (ex: am primit o amendă de parcare, vreau o adeverință, etc.)")
+institutie = st.text_input("Către ce instituție (ex: Primăria Beiuș, ANAF, etc.)")
+problema = st.text_area("Descrie pe scurt problema (ex: adeverință sponsorizare, etc.)")
 
 tip_act = st.selectbox("Ce fel de act vrei să generezi?", 
     ["Cerere Tip", "Contestație Amendă", "Plângere Prealabilă", "Solicitare Informații Publice"])
@@ -23,25 +22,28 @@ if st.button("Generează Documentul"):
         st.error("Te rugăm să completezi toate câmpurile și să introduci cheia API.")
     else:
         try:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            # REPARARE CRITICĂ: Forțăm transportul prin REST și folosim identificatorul generic 'gemini-pro'
+            # Acest mod este cel mai compatibil cu orice versiune de API (v1 sau v1beta)
+            genai.configure(api_key=api_key, transport='rest')
+            model = genai.GenerativeModel('gemini-pro')
             
-            prompt = f"""
-            Ești un expert juridic în România. Redactează un document de tip {tip_act} oficial, sobru și corect gramatical.
-            Expeditor: {nume}
-            Destinatar: {institutie}
-            Subiect: {problema}
-            Te rog să incluzi formulele de adresare oficiale, baza legală generală și un spațiu pentru semnătură.
-            """
+            prompt = f"Redactează o {tip_act} oficială către {institutie}, din partea lui {nume}, referitor la: {problema}. Include formule de adresare oficiale și text juridic adecvat."
             
-            response = model.generate_content(prompt)
-            
-            st.success("Documentul a fost generat cu succes!")
-            st.text_area("Copiați textul de mai jos în Word:", value=response.text, height=400)
-            st.info("Sfat: Verifică documentul și adaugă datele tale specifice (CNP, adresă) înainte de a-l depune.")
-            
+            with st.spinner("Se generează documentul..."):
+                response = model.generate_content(prompt)
+                
+                st.success("Documentul a fost generat!")
+                st.text_area("Rezultat (Copiați în Word):", value=response.text, height=400)
+                
         except Exception as e:
-            st.error(f"Eroare: {e}")
+            # Plan de rezervă: încercăm cu numele complet al modelului dacă primul eșuează
+            try:
+                model = genai.GenerativeModel('models/gemini-1.5-flash-latest')
+                response = model.generate_content(prompt)
+                st.success("Documentul a fost generat (v2)!")
+                st.text_area("Rezultat:", value=response.text, height=400)
+            except:
+                st.error(f"Eroare: {e}. Verifică dacă cheia API este validă.")
 
 st.markdown("---")
 st.caption("© IndexOficial.ro")
