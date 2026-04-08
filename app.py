@@ -1,46 +1,47 @@
 import streamlit as st
 import google.generativeai as genai
-from PIL import Image
 
-st.set_page_config(page_title="Index Oficial - Asistent AI", page_icon="⚖️")
+st.set_page_config(page_title="Index Oficial - Generator Acte", page_icon="📝")
 
-st.title("⚖️ Analist AI Documente Oficiale")
-st.markdown("---")
+st.title("📝 Generator de Cereri și Contestații")
+st.markdown("Completează câmpurile de mai jos pentru a genera un document oficial.")
 
+# Sidebar pentru API Key
 with st.sidebar:
-    st.write("### Configurare")
-    api_key = st.text_input("Cheie API Google", type="password")
+    api_key = st.text_input("Introdu Cheia API Gemini", type="password")
 
-tip_doc = st.selectbox(
-    "Categoria documentului:",
-    ["Legislație & Taxe", "Subvenții & Fonduri", "Administrativ", "Validare Formulare"]
-)
+# Formular de date
+nume = st.text_input("Numele tău complet")
+institutie = st.text_input("Către ce instituție (ex: Primăria Sector 3, ANAF, etc.)")
+problema = st.text_area("Descrie pe scurt problema (ex: am primit o amendă de parcare, vreau o adeverință, etc.)")
 
-uploaded_file = st.file_uploader("Încarcă imaginea documentului", type=['png', 'jpg', 'jpeg'])
+tip_act = st.selectbox("Ce fel de act vrei să generezi?", 
+    ["Cerere Tip", "Contestație Amendă", "Plângere Prealabilă", "Solicitare Informații Publice"])
 
-if uploaded_file and api_key:
-    if st.button("Descifrează Documentul"):
+if st.button("Generează Documentul"):
+    if not api_key or not nume or not problema:
+        st.error("Te rugăm să completezi toate câmpurile și să introduci cheia API.")
+    else:
         try:
-            # CONFIGURARE CRITICĂ: Forțăm utilizarea versiunii stabile v1
-            # Acest lucru elimină eroarea 404 v1beta
-            genai.configure(api_key=api_key, transport='rest')
-            
-            # Folosim modelul Flash care este cel mai rapid și stabil pentru conturile free
+            genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-1.5-flash')
             
-            img = Image.open(uploaded_file)
+            prompt = f"""
+            Ești un expert juridic în România. Redactează un document de tip {tip_act} oficial, sobru și corect gramatical.
+            Expeditor: {nume}
+            Destinatar: {institutie}
+            Subiect: {problema}
+            Te rog să incluzi formulele de adresare oficiale, baza legală generală și un spațiu pentru semnătură.
+            """
             
-            with st.spinner("Analizăm documentul conform legislației din România..."):
-                prompt = f"Ești un expert juridic în România. Analizează această imagine (tip: {tip_doc}) și extrage sub formă de listă: 1. Ce este documentul, 2. Termene de plată sau contestație, 3. Sume de plată/încasat, 4. Pașii legali imediați."
-                
-                response = model.generate_content([prompt, img])
-                
-                st.success("Analiză Finalizată!")
-                st.markdown(response.text)
-                
+            response = model.generate_content(prompt)
+            
+            st.success("Documentul a fost generat cu succes!")
+            st.text_area("Copiați textul de mai jos în Word:", value=response.text, height=400)
+            st.info("Sfat: Verifică documentul și adaugă datele tale specifice (CNP, adresă) înainte de a-l depune.")
+            
         except Exception as e:
             st.error(f"Eroare: {e}")
-            st.info("Verifică dacă ai creat cheia API în 'Google AI Studio'.")
 
 st.markdown("---")
 st.caption("© IndexOficial.ro")
