@@ -35,7 +35,7 @@ if uploaded_file:
         if st.button("Descifrează Documentul"):
             try:
                 genai.configure(api_key=api_key)
-                model = genai.GenerativeModel('gemini-1.5-flash')
+                model = genai.GenerativeModel('gemini-1.5-flash-latest')
                 
                 # Image Preparation
                 img = Image.open(uploaded_file)
