@@ -1,50 +1,46 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
-import io
 
-st.set_page_config(page_title="Index Oficial - Asistent AI", page_icon="⚖️", layout="centered")
+st.set_page_config(page_title="Index Oficial - Asistent AI", page_icon="⚖️")
 
 st.title("⚖️ Analist AI Documente Oficiale")
 st.markdown("---")
 
 with st.sidebar:
     st.write("### Configurare")
-    api_key = st.text_input("Cheie API Google (Gemini)", type="password")
-    st.info("Obține cheia de pe ://google.com")
+    api_key = st.text_input("Cheie API Google", type="password")
 
 tip_doc = st.selectbox(
-    "Alege categoria documentului pentru o analiză precisă:",
-    [
-        "Legislație & Taxe (ANAF, Impozite, Notificări)",
-        "Subvenții & Fonduri (APIA, AFIR, Start-up Nation)",
-        "Administrativ (Poliție, Primărie, Ministere)",
-        "Validare Formulare & Modele (Verificare completare)"
-    ]
+    "Categoria documentului:",
+    ["Legislație & Taxe", "Subvenții & Fonduri", "Administrativ", "Validare Formulare"]
 )
 
-uploaded_file = st.file_uploader("Încărcați documentul (Imagine PNG/JPG)", type=['png', 'jpg', 'jpeg'])
+uploaded_file = st.file_uploader("Încarcă imaginea documentului", type=['png', 'jpg', 'jpeg'])
 
 if uploaded_file and api_key:
     if st.button("Descifrează Documentul"):
         try:
             genai.configure(api_key=api_key)
             
-            # Folosim versiunea cea mai stabilă care rezolvă eroarea v1beta
-            model = genai.GenerativeModel('gemini-1.5-flash-latest')
+            # Schimbăm pe modelul PRO care are rute de acces mai stabile
+            model = genai.GenerativeModel('gemini-1.5-pro')
             
             img = Image.open(uploaded_file)
             
-            with st.spinner("Analizăm documentul conform legislației din România..."):
-                prompt = f"Ești un expert juridic și administrativ în România. Analizează această imagine de tip '{tip_doc}' și oferă un raport detaliat: ce este documentul, termene limită, sume de plată și pașii legali de urmat."
+            with st.spinner("Analizăm..."):
+                prompt = f"Ești expert juridic în România. Analizează această imagine (tip: {tip_doc}) și extrage: 1. Ce este documentul, 2. Termene limită, 3. Sume, 4. Pașii de urmat."
                 
+                # Forțăm cererea fără a specifica versiunea, lăsăm biblioteca să decidă
                 response = model.generate_content([prompt, img])
                 
                 st.success("Analiză Finalizată!")
                 st.markdown(response.text)
                 
         except Exception as e:
-            st.error(f"Eroare: {e}. Asigură-te că API Key-ul este corect.")
+            st.error(f"Eroare: {e}")
+            st.info("Dacă eroarea persistă, verifică dacă ai creat cheia API în 'Google AI Studio' și nu în 'Google Cloud Console'.")
 
 st.markdown("---")
 st.caption("© IndexOficial.ro")
+
